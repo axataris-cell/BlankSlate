@@ -18,6 +18,7 @@ bot = commands.Bot(command_prefix='!', intents=intents)
 
 @bot.event
 async def on_ready():
+    await bot.change_presence(activity=discord.Game(name="Helta is so nice!"))
     print(f'{bot.user} has connected to Discord!')
     print(f'Bot is ready and monitoring member joins')
     print('------')
@@ -31,16 +32,16 @@ async def on_member_join(member):
         print('Creating Pending role...')
         pending_role = await member.guild.create_role(
             name='Pending',
-            color=discord.Color.orange(),
+            color=discord.Color.orange(), 
             reason='Auto-created for member verification'
         )
     
     await member.add_roles(pending_role)
     print(f'Added Pending role to {member.name}')
     
-    verify_channel = discord.utils.get(member.guild.channels, name='verify')
+    verify_channel = discord.utils.get(member.guild.channels, name='╰┈➤︱︱𝓥𝓮𝓻𝓲𝓯𝔂︱︱✅')
     if not verify_channel:
-        print('Error: #verify channel not found!')
+        print('Error: verify channel not found!')
         return
     
     message = await verify_channel.send(
@@ -59,7 +60,7 @@ async def on_raw_reaction_add(payload):
         return
     
     channel = await bot.fetch_channel(payload.channel_id)
-    if not hasattr(channel, 'name') or channel.name != 'verify':
+    if not hasattr(channel, 'name') or channel.name != '╰┈➤︱︱𝓥𝓮𝓻𝓲𝓯𝔂︱︱✅':
         return
     
     if not hasattr(channel, 'fetch_message'):
