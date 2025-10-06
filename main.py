@@ -22,7 +22,7 @@ bot = commands.Bot(command_prefix='!', intents=intents)
 
 @bot.event
 async def on_ready():
-    await bot.change_presence(activity=discord.Game(name="bruh"))
+    await bot.change_presence(activity=discord.Game(name="Codeforces"))
     print(f'{bot.user} has connected to Discord!')
     print(f'Bot is ready and monitoring member joins')
     print('------')
