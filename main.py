@@ -2,7 +2,6 @@ import discord
 from discord.ext import commands
 import os
 
-
 def get_bot_token():
     token = os.environ.get('DISCORD_BOT_TOKEN')
     if not token:

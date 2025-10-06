@@ -25,10 +25,16 @@ venv/
 env/
 ENV/
 
-# Environment variables
+# Environment / Secrets
 .env
+.env.*
+token.txt
+token.secret
+*.secret
+*.key
+secrets.json
 
-# IDE
+# IDE / Editors
 .vscode/
 .idea/
 *.swp
