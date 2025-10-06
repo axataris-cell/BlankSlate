@@ -1,6 +1,9 @@
 import discord
+from keep_alive import keep_alive
 from discord.ext import commands
 import os
+
+keep_alive()
 
 def get_bot_token():
     token = os.environ.get('DISCORD_BOT_TOKEN')
