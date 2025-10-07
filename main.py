@@ -2,6 +2,7 @@ import discord
 from keep_alive import keep_alive
 from discord.ext import commands
 import os
+import openai
 
 keep_alive()
 
@@ -12,6 +13,12 @@ def get_bot_token():
             'DISCORD_BOT_TOKEN not found in environment variables')
     return token
 
+OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
+if not OPENAI_API_KEY:
+    raise ValueError('OPENAI_API_KEY not found in environment variables')
+openai.api_key = OPENAI_API_KEY
+
+gpt_mode_enabled = False
 
 intents = discord.Intents.default()
 intents.members = True
@@ -21,7 +28,7 @@ intents.guilds = True
 
 bot = commands.Bot(command_prefix='!', intents=intents)
 
-
+#Just the console
 @bot.event
 async def on_ready():
     await bot.change_presence(activity=discord.Game(name="Codeforces"))
@@ -29,6 +36,7 @@ async def on_ready():
     print(f'Bot is ready and monitoring member joins')
     print('------')
 
+#Verify Segment
 
 @bot.event
 async def on_member_join(member):
@@ -52,7 +60,7 @@ async def on_member_join(member):
         return
 
     message = await verify_channel.send(
-        f'User {member.mention} ({member.name}) is waiting to be verified')
+        f'Patootie {member.mention} ({member.name}) is waiting to be verified~!')
 
     await message.add_reaction('✅')
     print(f'Sent verification message for {member.name}')
@@ -71,6 +79,7 @@ async def on_message(message):
     # This line is important so commands still work
     await bot.process_commands(message)
 
+@bot.event
 async def on_raw_reaction_add(payload):
     if not bot.user or payload.user_id == bot.user.id:
         return
@@ -119,7 +128,45 @@ async def on_raw_reaction_add(payload):
     print(f'Added Member role to {member.name}')
 
     if hasattr(channel, 'send'):
-        await channel.send(f'✅ {member.mention} has been verified!')
+        await channel.send(f'✅ {member.mention} has been approved by the moderators!')
+
+#GPT Segment
+
+@bot.event
+async def on_message(message):
+    global gpt_mode_enabled
+
+    # Ignore messages sent by the bot itself
+    if message.author == bot.user:
+        return
+
+    # Check for mention + !start / !stop
+    if bot.user in message.mentions:
+        if '!start' in message.content.lower():
+            gpt_mode_enabled = True
+            await message.channel.send("I will text you from now on~... use !stop to turn me off ( •̀ ω •́ )✧")
+            return
+        elif '!stop' in message.content.lower():
+            gpt_mode_enabled = False
+            await message.channel.send("I'm kinda sleepy...")
+            return
+
+    # GPT mode: respond to all messages
+    if gpt_mode_enabled:
+        await message.channel.typing()
+        try:
+            response = openai.ChatCompletion.create(
+                model="gpt-3.5-turbo",
+                messages=[{"role": "user", "content": message.content}],
+                temperature=0.7
+            )
+            answer = response['choices'][0]['message']['content']
+            await message.channel.send(answer)
+        except Exception as e:
+            await message.channel.send(f"Error: {e}")
+
+    # Important: let commands still work
+    await bot.process_commands(message)
 
 
 if __name__ == '__main__':
