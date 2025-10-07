@@ -132,9 +132,12 @@ async def on_raw_reaction_add(payload):
 
 #GPT Segment
 
+# Store which user has activated GPT mode
+gpt_mode_user = None
+
 @bot.event
 async def on_message(message):
-    global gpt_mode_enabled
+    global gpt_mode_enabled, gpt_mode_user
 
     # Ignore messages sent by the bot itself
     if message.author == bot.user:
@@ -144,18 +147,24 @@ async def on_message(message):
     if bot.user in message.mentions:
         if '!start' in message.content.lower():
             gpt_mode_enabled = True
-            await message.channel.send("O-okay~... I'll talk to you now (〃ﾉωﾉ)~ use !stop to turn me off...!?")
+            gpt_mode_user = message.author.id  # Only this user gets replies
+            await message.channel.send(
+                f"O-okay~... I'll talk to you now, {message.author.mention} (〃ﾉωﾉ)~ use !stop to turn me off...!?"
+            )
             return
         elif '!stop' in message.content.lower():
-            gpt_mode_enabled = False
-            await message.channel.send("I-I'm kinda sleepy... (｡•́︿•̀｡)")
+            if message.author.id == gpt_mode_user:
+                gpt_mode_enabled = False
+                gpt_mode_user = None
+                await message.channel.send("I-I'm kinda sleepy... (｡•́︿•̀｡)")
+            else:
+                await message.channel.send("You didn't start me~ (⁄ ⁄•⁄ω⁄•⁄ ⁄)")
             return
 
-    # GPT mode: respond to messages
-    if gpt_mode_enabled:
+    # GPT mode: respond only to the user who started it
+    if gpt_mode_enabled and message.author.id == gpt_mode_user:
         await message.channel.typing()
         try:
-            # Define GPT personality
             system_prompt = (
                 "You are a shy, girly e-girl chatbot named Bunny~! 🐰💕 "
                 "Your personality: cute, awkward, easily embarrassed, loves using kaomoji (ヽ（≧□≦）ノ, ( •̀ ω •́ )✧, w(ﾟДﾟ)w), "
@@ -165,24 +174,25 @@ async def on_message(message):
                 "Use short sentences, expressive reactions, and be playful but awkward."
             )
 
-            response = openai.ChatCompletion.create(
+            client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+            response = client.chat.completions.create(
                 model="gpt-3.5-turbo",
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": message.content}
                 ],
-                temperature=0.8,  # slightly more creative
+                temperature=0.8,
                 max_tokens=200
             )
 
-            answer = response['choices'][0]['message']['content']
+            answer = response.choices[0].message.content
             await message.channel.send(answer)
+
         except Exception as e:
             await message.channel.send(f"Error: {e}")
 
     # Important: let commands still work
     await bot.process_commands(message)
-
 
 
 if __name__ == '__main__':
