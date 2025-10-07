@@ -58,21 +58,6 @@ async def on_member_join(member):
     await message.add_reaction('✅')
     print(f'Sent verification message for {member.name}')
 
-
-@bot.event
-async def on_message(message):
-    # Ignore messages sent by the bot itself
-    if message.author == bot.user:
-        return
-
-    # Respond to mentions (simple placeholder)
-    if bot.user in message.mentions:
-        await message.channel.send("...")
-
-    # Allow commands to still work
-    await bot.process_commands(message)
-
-
 @bot.event
 async def on_raw_reaction_add(payload):
     if not bot.user or payload.user_id == bot.user.id:
@@ -125,14 +110,18 @@ async def on_raw_reaction_add(payload):
     if hasattr(channel, 'send'):
         await channel.send(f'✅ {member.mention} has been approved by the moderators! ヾ(≧▽≦*)o')
 
-# --------- Join in voice channel to keep Jockey Music running? ------------
+# -------- Message Chat Respond -----------
 @bot.event
 async def on_message(message):
     # Ignore messages from the bot itself
     if message.author == bot.user:
         return
 
-    # Only respond if the bot is mentioned
+    # --- Respond to mentions (simple placeholder) ---
+    if bot.user in message.mentions and "!join" not in message.content and "!leave" not in message.content:
+        await message.channel.send("...")
+
+    # --- Voice channel commands ---
     if bot.user in message.mentions:
         content_lower = message.content.lower()
 
@@ -156,7 +145,7 @@ async def on_message(message):
             else:
                 await message.channel.send("I'm not in a voice channel right now~ (⁄ ⁄•⁄ω⁄•⁄ ⁄)")
 
-    # Allow other commands to work
+    # --- Keep commands working ---
     await bot.process_commands(message)
 
 
