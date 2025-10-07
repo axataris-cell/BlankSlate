@@ -59,6 +59,18 @@ async def on_member_join(member):
 
 
 @bot.event
+async def on_message(message):
+    # Ignore messages sent by the bot itself
+    if message.author == bot.user:
+        return
+
+    # Check if the bot is mentioned
+    if bot.user in message.mentions:
+        await message.channel.send("...")
+
+    # This line is important so commands still work
+    await bot.process_commands(message)
+
 async def on_raw_reaction_add(payload):
     if not bot.user or payload.user_id == bot.user.id:
         return
