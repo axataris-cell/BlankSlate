@@ -2,9 +2,17 @@ import discord
 from keep_alive import keep_alive
 from discord.ext import commands
 import os
-import openai
+from mistralai import Mistral
 
 keep_alive()
+
+MISTRAL_API_KEY = os.environ.get('MISTRAL_API_KEY')
+if not MISTRAL_API_KEY:
+    raise ValueError('MISTRAL_API_KEY not found in environment variables')
+client = Mistral(api_key=MISTRAL_API_KEY)
+
+gpt_mode_enabled = False
+gpt_mode_user = None
 
 def get_bot_token():
     token = os.environ.get('DISCORD_BOT_TOKEN')
@@ -12,13 +20,6 @@ def get_bot_token():
         raise ValueError(
             'DISCORD_BOT_TOKEN not found in environment variables')
     return token
-
-OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
-if not OPENAI_API_KEY:
-    raise ValueError('OPENAI_API_KEY not found in environment variables')
-openai.api_key = OPENAI_API_KEY
-
-gpt_mode_enabled = False
 
 intents = discord.Intents.default()
 intents.members = True
@@ -130,10 +131,7 @@ async def on_raw_reaction_add(payload):
     if hasattr(channel, 'send'):
         await channel.send(f'✅ {member.mention} has been approved by the moderators!')
 
-#GPT Segment
-
-# Store which user has activated GPT mode
-gpt_mode_user = None
+# GPT Segment (Mistral)
 
 @bot.event
 async def on_message(message):
@@ -149,7 +147,7 @@ async def on_message(message):
             gpt_mode_enabled = True
             gpt_mode_user = message.author.id  # Only this user gets replies
             await message.channel.send(
-                f"O-okay~... I'll talk to you now, {message.author.mention} (〃ﾉωﾉ)~ use !stop to turn me off...!?"
+                f"O-okay~... I'll talk to you! {message.author.mention} (〃ﾉωﾉ)~ (use !stop to turn me off!!!)"
             )
             return
         elif '!stop' in message.content.lower():
@@ -167,25 +165,24 @@ async def on_message(message):
         try:
             system_prompt = (
                 "You are a shy, girly e-girl chatbot named Bunny~! 🐰💕 "
-                "Your personality: cute, awkward, easily embarrassed, loves using kaomoji (ヽ（≧□≦）ノ, ( •̀ ω •́ )✧, w(ﾟДﾟ)w), "
-                "adds '~', '!?', and '...' randomly in sentences. "
+                "Your personality: cute, awkward, easily embarrassed, loves using kaomoji "
+                "(ヽ（≧□≦）ノ, ( •̀ ω •́ )✧, w(ﾟДﾟ)w), adds '~', '!?', and '...' randomly in sentences. "
                 "You blush and become extremely shy if teased or if someone says something humiliating. "
                 "Speak like a real human e-girl with a soft, timid, and pink aesthetic. "
                 "Use short sentences, expressive reactions, and be playful but awkward."
             )
 
-            client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-            response = client.chat.completions.create(
-                model="gpt-3.5-turbo",
+            response = client.chat.complete(
+                model="mistral-tiny",  # free & fast model
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": message.content}
                 ],
-                temperature=0.8,
+                temperature=1.2,
                 max_tokens=200
             )
 
-            answer = response.choices[0].message.content
+            answer = response.choices[0].message["content"]
             await message.channel.send(answer)
 
         except Exception as e:
