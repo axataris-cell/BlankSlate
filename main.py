@@ -144,22 +144,37 @@ async def on_message(message):
     if bot.user in message.mentions:
         if '!start' in message.content.lower():
             gpt_mode_enabled = True
-            await message.channel.send("I will text you from now on~... use !stop to turn me off ( •̀ ω •́ )✧")
+            await message.channel.send("O-okay~... I'll talk to you now (〃ﾉωﾉ)~ use !stop to turn me off...!?")
             return
         elif '!stop' in message.content.lower():
             gpt_mode_enabled = False
-            await message.channel.send("I'm kinda sleepy...")
+            await message.channel.send("I-I'm kinda sleepy... (｡•́︿•̀｡)")
             return
 
-    # GPT mode: respond to all messages
+    # GPT mode: respond to messages
     if gpt_mode_enabled:
         await message.channel.typing()
         try:
+            # Define GPT personality
+            system_prompt = (
+                "You are a shy, girly e-girl chatbot named Bunny~! 🐰💕 "
+                "Your personality: cute, awkward, easily embarrassed, loves using kaomoji (ヽ（≧□≦）ノ, ( •̀ ω •́ )✧, w(ﾟДﾟ)w), "
+                "adds '~', '!?', and '...' randomly in sentences. "
+                "You blush and become extremely shy if teased or if someone says something humiliating. "
+                "Speak like a real human e-girl with a soft, timid, and pink aesthetic. "
+                "Use short sentences, expressive reactions, and be playful but awkward."
+            )
+
             response = openai.ChatCompletion.create(
                 model="gpt-3.5-turbo",
-                messages=[{"role": "user", "content": message.content}],
-                temperature=0.7
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": message.content}
+                ],
+                temperature=0.8,  # slightly more creative
+                max_tokens=200
             )
+
             answer = response['choices'][0]['message']['content']
             await message.channel.send(answer)
         except Exception as e:
@@ -167,6 +182,7 @@ async def on_message(message):
 
     # Important: let commands still work
     await bot.process_commands(message)
+
 
 
 if __name__ == '__main__':
