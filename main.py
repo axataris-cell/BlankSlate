@@ -52,7 +52,7 @@ async def on_member_join(member):
         return
 
     message = await verify_channel.send(
-        f'Patootie {member.mention} ({member.name}) is waiting to be verified~!'
+        f'Patootie {member.mention} ({member.name}) is waiting to be verified~! ( •̀ ω •́ )✧'
     )
 
     await message.add_reaction('✅')
@@ -123,7 +123,41 @@ async def on_raw_reaction_add(payload):
     print(f'Added Member role to {member.name}')
 
     if hasattr(channel, 'send'):
-        await channel.send(f'✅ {member.mention} has been approved by the moderators!')
+        await channel.send(f'✅ {member.mention} has been approved by the moderators! ヾ(≧▽≦*)o')
+
+# --------- Join in voice channel to keep Jockey Music running? ------------
+@bot.event
+async def on_message(message):
+    # Ignore messages from the bot itself
+    if message.author == bot.user:
+        return
+
+    # Only respond if the bot is mentioned
+    if bot.user in message.mentions:
+        content_lower = message.content.lower()
+
+        # Join voice channel
+        if "!join" in content_lower:
+            if message.author.voice is None:
+                await message.channel.send("You need to be in a voice channel for me to join~ ヾ(≧▽≦*)o")
+            else:
+                channel = message.author.voice.channel
+                if message.guild.voice_client:  # already connected
+                    await message.guild.voice_client.move_to(channel)
+                else:
+                    await channel.connect()
+                await message.channel.send(f"O-okay~... I joined {channel.name} (〃ﾉωﾉ)")
+
+        # Leave voice channel
+        elif "!leave" in content_lower:
+            if message.guild.voice_client:
+                await message.guild.voice_client.disconnect()
+                await message.channel.send("Bye bye~... I'm leaving the voice channel (｡•́︿•̀｡)")
+            else:
+                await message.channel.send("I'm not in a voice channel right now~ (⁄ ⁄•⁄ω⁄•⁄ ⁄)")
+
+    # Allow other commands to work
+    await bot.process_commands(message)
 
 
 if __name__ == '__main__':
